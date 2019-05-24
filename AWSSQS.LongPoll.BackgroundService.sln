@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28902.138
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AWSSQS.LongPoll.BackgroundService", "AWSSQS.LongPoll.BackgroundService\AWSSQS.LongPoll.BackgroundService.csproj", "{297B3B0D-F402-4782-B43C-22495358F793}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleApp9000", "SampleApp9000\SampleApp9000.csproj", "{B7B5A1E0-4680-4439-AFBB-65995392AAB7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{297B3B0D-F402-4782-B43C-22495358F793}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{297B3B0D-F402-4782-B43C-22495358F793}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{297B3B0D-F402-4782-B43C-22495358F793}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{297B3B0D-F402-4782-B43C-22495358F793}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7B5A1E0-4680-4439-AFBB-65995392AAB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7B5A1E0-4680-4439-AFBB-65995392AAB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7B5A1E0-4680-4439-AFBB-65995392AAB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7B5A1E0-4680-4439-AFBB-65995392AAB7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A452D875-C166-4607-A1AA-4CA66FECEFC0}
+	EndGlobalSection
+EndGlobal
