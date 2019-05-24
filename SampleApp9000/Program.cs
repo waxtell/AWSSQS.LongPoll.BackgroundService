@@ -62,8 +62,13 @@ namespace SampleApp9000
                                         OnMessageReceived = async (message, cancellationToken) =>
                                         {
                                             Console.WriteLine($"Received: {message.Body}");
-                                            Thread.Sleep(10000);
-                                            await Task.CompletedTask;
+
+                                            // Return true to delete the message from the queue.
+                                            // Return false if you plan to manage message deletion.
+
+                                            return 
+                                                await 
+                                                    Task.FromResult(true);
                                         },
                                         OnException = async (exception, cancellationToken) =>
                                         {
@@ -71,7 +76,10 @@ namespace SampleApp9000
 
                                             // Return false to quit, true to continue trying...
                                             Thread.Sleep(10000);
-                                            return await Task.FromResult(true);
+
+                                            return 
+                                                await 
+                                                    Task.FromResult(true);
                                         }
                                     };
                                 }

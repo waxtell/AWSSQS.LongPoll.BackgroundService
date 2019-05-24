@@ -12,13 +12,13 @@ namespace AWSSQS.LongPoll.BackgroundService
     {
         private readonly IAmazonSQS _sqsClient;
         private readonly Events _events;
-        private readonly Func<ReceiveMessageRequest> _requestFactory;
+        private readonly Func<ReceiveMessageRequest> _configFactory;
         private readonly LongPollServiceOptions _options;
 
-        public LongPollService(IAmazonSQS sqsClient, Events events, LongPollServiceOptions options, Func<ReceiveMessageRequest> requestFactory)
+        public LongPollService(IAmazonSQS sqsClient, Events events, LongPollServiceOptions options, Func<ReceiveMessageRequest> configFactory)
         {
             _sqsClient = sqsClient;
-            _requestFactory = requestFactory;
+            _configFactory = configFactory;
             _events = events ?? new Events();
             _options = options ?? new LongPollServiceOptions();
         }
@@ -29,11 +29,13 @@ namespace AWSSQS.LongPoll.BackgroundService
             {
                 try
                 {
+                    var config = _configFactory.Invoke();
+
                     var receiveMessageResponse = await 
                                                     _sqsClient
                                                         .ReceiveMessageAsync
                                                         (
-                                                            _requestFactory.Invoke(), 
+                                                            config, 
                                                             stoppingToken
                                                         );
 
@@ -48,6 +50,26 @@ namespace AWSSQS.LongPoll.BackgroundService
                                                         .OnMessageReceived
                                                         (
                                                             message,
+                                                            stoppingToken
+                                                        )
+                                                        .ContinueWith
+                                                        (
+                                                            antecedent =>
+                                                            {
+                                                                if (antecedent.Status.HasFlag(TaskStatus.RanToCompletion) && antecedent.Result)
+                                                                {
+                                                                    _sqsClient
+                                                                        .DeleteMessageAsync
+                                                                        (
+                                                                            new DeleteMessageRequest
+                                                                            (
+                                                                                config.QueueUrl,
+                                                                                message.ReceiptHandle
+                                                                            ),
+                                                                            stoppingToken
+                                                                        );
+                                                                }
+                                                            },
                                                             stoppingToken
                                                         )
                                     )
