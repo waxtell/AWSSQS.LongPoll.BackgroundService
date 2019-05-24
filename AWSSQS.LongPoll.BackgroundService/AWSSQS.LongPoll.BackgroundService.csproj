@@ -4,7 +4,12 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Will Axtell</Authors>
     <Description>HostBuilder Background service for monitoring AWS SQS queue</Description>
-    <PackageReleaseNotes>1.0.0- Initial release</PackageReleaseNotes>
+    <PackageReleaseNotes>1.0.0- Initial release
+1.0.1- Added package meta-data</PackageReleaseNotes>
+    <PackageProjectUrl>https://github.com/waxtell/AWSSQS.LongPoll.BackgroundService</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/waxtell/AWSSQS.LongPoll.BackgroundService.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
