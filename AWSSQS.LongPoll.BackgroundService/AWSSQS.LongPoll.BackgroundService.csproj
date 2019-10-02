@@ -1,19 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Will Axtell</Authors>
     <Description>HostBuilder Background service for monitoring AWS SQS queue</Description>
     <PackageReleaseNotes>1.0.0- Initial release
-1.0.1- Added package meta-data</PackageReleaseNotes>
+1.0.1- Added package meta-data
+1.2.0- Improved exception management</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/waxtell/AWSSQS.LongPoll.BackgroundService</PackageProjectUrl>
     <RepositoryUrl>https://github.com/waxtell/AWSSQS.LongPoll.BackgroundService.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>1.0.1</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.SQS" Version="3.3.100.24" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.3.102.13" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="2.2.0" />
   </ItemGroup>
 

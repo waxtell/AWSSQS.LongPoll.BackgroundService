@@ -69,6 +69,10 @@ namespace AWSSQS.LongPoll.BackgroundService
                                                                             stoppingToken
                                                                         );
                                                                 }
+                                                                else if (antecedent.Exception != null)
+                                                                {
+                                                                    throw antecedent.Exception;
+                                                                }
                                                             },
                                                             stoppingToken
                                                         )
