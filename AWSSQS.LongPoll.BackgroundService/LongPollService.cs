@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using AWSSQS.LongPoll.BackgroundService.Extensions;
+using AWSSQS.LongPoll.BackgroundService.Models;
 using AWSSQS.LongPoll.BackgroundService.Models.External;
 
 namespace AWSSQS.LongPoll.BackgroundService
@@ -31,53 +33,53 @@ namespace AWSSQS.LongPoll.BackgroundService
                 {
                     var config = _configFactory.Invoke();
 
-                    var receiveMessageResponse = await 
-                                                    _sqsClient
-                                                        .ReceiveMessageAsync
-                                                        (
-                                                            config, 
-                                                            stoppingToken
-                                                        );
+                    var receiveMessageResponse = await
+                        _sqsClient
+                            .ReceiveMessageAsync
+                            (
+                                config,
+                                stoppingToken
+                            );
 
                     Task
                         .WaitAll
                         (
                             receiveMessageResponse
-                                    .Messages
-                                    .Select
-                                    (
-                                        message => _events
-                                                        .OnMessageReceived
+                                .Messages
+                                .Select
+                                (
+                                    message => _events
+                                        .OnMessageReceived
+                                        (
+                                            message,
+                                            stoppingToken
+                                        )
+                                        .ContinueWith
+                                        (
+                                            antecedent =>
+                                            {
+                                                if (antecedent.Status == TaskStatus.RanToCompletion && antecedent.Result)
+                                                {
+                                                    _sqsClient
+                                                        .DeleteMessageAsync
                                                         (
-                                                            message,
+                                                            new DeleteMessageRequest
+                                                            (
+                                                                config.QueueUrl,
+                                                                message.ReceiptHandle
+                                                            ),
                                                             stoppingToken
-                                                        )
-                                                        .ContinueWith
-                                                        (
-                                                            antecedent =>
-                                                            {
-                                                                if (antecedent.Status.HasFlag(TaskStatus.RanToCompletion) && antecedent.Result)
-                                                                {
-                                                                    _sqsClient
-                                                                        .DeleteMessageAsync
-                                                                        (
-                                                                            new DeleteMessageRequest
-                                                                            (
-                                                                                config.QueueUrl,
-                                                                                message.ReceiptHandle
-                                                                            ),
-                                                                            stoppingToken
-                                                                        );
-                                                                }
-                                                                else if (antecedent.Exception != null)
-                                                                {
-                                                                    throw antecedent.Exception;
-                                                                }
-                                                            },
-                                                            stoppingToken
-                                                        )
-                                    )
-                                    .ToArray()
+                                                        );
+                                                }
+                                                else if (antecedent.Exception != null)
+                                                {
+                                                    throw new SQSMessageException(antecedent.Exception, message);
+                                                }
+                                            },
+                                            stoppingToken
+                                        )
+                                )
+                                .ToArray()
                         );
 
                     await
@@ -88,15 +90,17 @@ namespace AWSSQS.LongPoll.BackgroundService
                                 stoppingToken
                             );
                 }
-                catch (TaskCanceledException)
+                catch (AggregateException aggregateException)
                 {
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    var shouldContinue = await
-                                            _events
-                                                .OnException(e, stoppingToken);
+                    var shouldContinue = await 
+                                            aggregateException
+                                                .InnerExceptions
+                                                .OfType<SQSMessageException>()
+                                                .Aggregate
+                                                (
+                                                    true, 
+                                                    async (current, exception) => current && await _events.OnException(exception.SQSMessage, exception.InnerException, stoppingToken)
+                                                );
 
                     if (!shouldContinue)
                     {
