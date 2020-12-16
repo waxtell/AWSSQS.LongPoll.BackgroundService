@@ -17,21 +17,11 @@ namespace SampleApp9000
 {
     public class Program
     {
-        // AppVeyor currently does not provide an environment that supports c# 7.1
-        // This makes main synchronous and me sad.
-        //
-        //public static async Task Main(string[] args)
-        //{
-        //    await
-        //        CreateHostBuilder(args)
-        //            .RunConsoleAsync();
-        //}
-
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            CreateHostBuilder(args)
-                .Build()
-                .Run();
+            await
+                CreateHostBuilder(args)
+                    .RunConsoleAsync();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -65,12 +55,11 @@ namespace SampleApp9000
 
                                             // Return true to delete the message from the queue.
                                             // Return false if you plan to manage message deletion.
-
                                             return 
                                                 await 
                                                     Task.FromResult(true);
                                         },
-                                        OnException = async (exception, cancellationToken) =>
+                                        OnException = async (message, exception, cancellationToken) =>
                                         {
                                             Console.WriteLine($"Exception: {exception.Message}");
 
