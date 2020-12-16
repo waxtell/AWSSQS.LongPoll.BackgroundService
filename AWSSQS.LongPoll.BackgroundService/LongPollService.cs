@@ -4,9 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using AWSSQS.LongPoll.BackgroundService.Extensions;
-using AWSSQS.LongPoll.BackgroundService.Models;
 using AWSSQS.LongPoll.BackgroundService.Models.External;
+using Microsoft.Extensions.Hosting;
 
 namespace AWSSQS.LongPoll.BackgroundService
 {
@@ -16,98 +15,98 @@ namespace AWSSQS.LongPoll.BackgroundService
         private readonly Events _events;
         private readonly Func<ReceiveMessageRequest> _configFactory;
         private readonly LongPollServiceOptions _options;
+        private readonly IApplicationLifetime _appLifetime;
 
-        public LongPollService(IAmazonSQS sqsClient, Events events, LongPollServiceOptions options, Func<ReceiveMessageRequest> configFactory)
+        public LongPollService(IAmazonSQS sqsClient, Events events, LongPollServiceOptions options, Func<ReceiveMessageRequest> configFactory, IApplicationLifetime appLifetime)
         {
             _sqsClient = sqsClient;
             _configFactory = configFactory;
             _events = events ?? new Events();
             _options = options ?? new LongPollServiceOptions();
+            _appLifetime = appLifetime;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            stoppingToken.Register(_appLifetime.StopApplication);
+
             while (!stoppingToken.IsCancellationRequested)
             {
-                try
-                {
-                    var config = _configFactory.Invoke();
+                var config = _configFactory.Invoke();
 
-                    var receiveMessageResponse = await
-                        _sqsClient
-                            .ReceiveMessageAsync
+                var receiveMessageResponse = await
+                                                _sqsClient
+                                                    .ReceiveMessageAsync
+                                                    (
+                                                        config,
+                                                        stoppingToken
+                                                    );
+
+                Task
+                    .WaitAll
+                    (
+                        receiveMessageResponse
+                            .Messages
+                            .Select
                             (
-                                config,
-                                stoppingToken
-                            );
-
-                    Task
-                        .WaitAll
-                        (
-                            receiveMessageResponse
-                                .Messages
-                                .Select
-                                (
-                                    message => _events
-                                        .OnMessageReceived
-                                        (
-                                            message,
-                                            stoppingToken
-                                        )
-                                        .ContinueWith
-                                        (
-                                            antecedent =>
-                                            {
-                                                if (antecedent.Status == TaskStatus.RanToCompletion && antecedent.Result)
-                                                {
-                                                    _sqsClient
-                                                        .DeleteMessageAsync
-                                                        (
-                                                            new DeleteMessageRequest
+                                async message => await 
+                                                    await 
+                                                        _events
+                                                            .OnMessageReceived
                                                             (
-                                                                config.QueueUrl,
-                                                                message.ReceiptHandle
-                                                            ),
-                                                            stoppingToken
-                                                        );
-                                                }
-                                                else if (antecedent.Exception != null)
-                                                {
-                                                    throw new SQSMessageException(antecedent.Exception, message);
-                                                }
-                                            },
-                                            stoppingToken
-                                        )
-                                )
-                                .ToArray()
+                                                                message,
+                                                                stoppingToken
+                                                            )
+                                                            .ContinueWith
+                                                            (
+                                                                async antecedent =>
+                                                                {
+                                                                    if (antecedent.Status == TaskStatus.RanToCompletion && antecedent.Result)
+                                                                    {
+                                                                        await 
+                                                                            _sqsClient
+                                                                                 .DeleteMessageAsync
+                                                                                 (
+                                                                                     new DeleteMessageRequest
+                                                                                     (
+                                                                                         config.QueueUrl,
+                                                                                         message.ReceiptHandle
+                                                                                     ),
+                                                                                     stoppingToken
+                                                                                 );
+                                                                    }
+                                                                    else if (antecedent.Exception != null)
+                                                                    {
+                                                                        var shouldContinue = await 
+                                                                                                _events
+                                                                                                    .OnException
+                                                                                                    (
+                                                                                                        message,
+                                                                                                        antecedent.Exception,
+                                                                                                        stoppingToken
+                                                                                                    );
+            
+
+                                                                        if (!shouldContinue)
+                                                                        {
+                                                                            await 
+                                                                                StopAsync(stoppingToken);
+                                                                        }
+                                                                    }
+                                                                },
+                                                                stoppingToken
+                                                            )
+                            )
+                            .ToArray()
+                    );
+
+                await
+                    Task
+                        .Delay
+                        (
+                            _options.SleepIntervalMilliseconds,
+                            stoppingToken
                         );
-
-                    await
-                        Task
-                            .Delay
-                            (
-                                _options.SleepIntervalMilliseconds,
-                                stoppingToken
-                            );
-                }
-                catch (AggregateException aggregateException)
-                {
-                    var shouldContinue = await 
-                                            aggregateException
-                                                .InnerExceptions
-                                                .OfType<SQSMessageException>()
-                                                .Aggregate
-                                                (
-                                                    true, 
-                                                    async (current, exception) => current && await _events.OnException(exception.SQSMessage, exception.InnerException, stoppingToken)
-                                                );
-
-                    if (!shouldContinue)
-                    {
-                        await
-                            StopAsync(stoppingToken);
-                    }
-                }
             }
         }
     }
