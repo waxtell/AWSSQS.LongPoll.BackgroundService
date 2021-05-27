@@ -15,9 +15,9 @@ namespace AWSSQS.LongPoll.BackgroundService
         private readonly Events _events;
         private readonly Func<ReceiveMessageRequest> _configFactory;
         private readonly LongPollServiceOptions _options;
-        private readonly IApplicationLifetime _appLifetime;
+        private readonly IHostApplicationLifetime _appLifetime;
 
-        public LongPollService(IAmazonSQS sqsClient, Events events, LongPollServiceOptions options, Func<ReceiveMessageRequest> configFactory, IApplicationLifetime appLifetime)
+        public LongPollService(IAmazonSQS sqsClient, Events events, LongPollServiceOptions options, Func<ReceiveMessageRequest> configFactory, IHostApplicationLifetime appLifetime)
         {
             _sqsClient = sqsClient;
             _configFactory = configFactory;
@@ -86,7 +86,6 @@ namespace AWSSQS.LongPoll.BackgroundService
                                                                                                         stoppingToken
                                                                                                     );
             
-
                                                                         if (!shouldContinue)
                                                                         {
                                                                             await 
