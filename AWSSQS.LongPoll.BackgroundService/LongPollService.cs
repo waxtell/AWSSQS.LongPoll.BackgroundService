@@ -99,6 +99,11 @@ namespace AWSSQS.LongPoll.BackgroundService
                             .ToArray()
                     );
 
+                if (receiveMessageResponse.Messages.Any() && _options.RunTillEmpty)
+                {
+                    continue;
+                }
+
                 await
                     Task
                         .Delay
